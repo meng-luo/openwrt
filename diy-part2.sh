@@ -23,4 +23,4 @@ sed -i '/uci commit system/i\uci set system.@system[0].hostname='Mengluo_Router'
 sed -i "s/OpenWrt /meng-luo build $(TZ=UTC-8 date "+%Y.%m.%d") @ OpenWrt /g" package/lean/default-settings/files/zzz-default-settings
 
 # 自定义连接数
-echo 'net.netfilter.nf_conntrack_max=262144' >> package/base-files/files/etc
+echo 'net.netfilter.nf_conntrack_max=262144' >> package/base-files/files/etc/sysctl.conf

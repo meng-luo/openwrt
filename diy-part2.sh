@@ -24,8 +24,9 @@ sed -i "s/OpenWrt /meng-luo build $(TZ=UTC-8 date "+%Y.%m.%d") @ OpenWrt /g" pac
 
 # 自定义连接数
 echo 'net.netfilter.nf_conntrack_max=262144' >> package/base-files/files/etc/sysctl.conf
+
 ## 更新 luci-theme-argon
 rm -rf feeds/luci/themes/luci-theme-argon
-git clone https://github.com/jerrykuku/luci-theme-argon.git feeds/luci/themes/luci-theme-argon
-
-
+rm -rf package/downloads/luci-theme-argon
+git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git package/downloads/luci-theme-argon
+git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git feeds/luci/themes/luci-theme-argon

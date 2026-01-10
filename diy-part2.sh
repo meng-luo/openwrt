@@ -24,8 +24,3 @@ sed -i "s/LEDE /meng-luo build $(TZ=UTC-8 date "+%Y.%m.%d") @ LEDE /g" package/l
 
 # 自定义连接数
 echo 'net.netfilter.nf_conntrack_max=262144' >> package/base-files/files/etc/sysctl.conf
-
-## 更新 luci-theme-argon
-rm -rf feeds/luci/themes/luci-theme-argon
-git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git package/lean/luci-theme-argon
-git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git feeds/luci/themes/luci-theme-argon

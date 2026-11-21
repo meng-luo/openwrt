@@ -91,7 +91,13 @@ jobs:
                   kmod-wireguard wireguard-tools luci-proto-wireguard \
                   kmod-tcp-bbr kmod-nft-offload kmod-nft-fullcone \
                   luci-app-passwall adguardhome luci-app-adguardhome dnsmasq-full \
-                  miniupnpd-nftables luci-app-package-manager; do
+                  miniupnpd-nftables luci-app-package-manager \
+                  xray-core sing-box chinadns-ng geoview v2ray-plugin v2ray-geoip v2ray-geosite \
+                  luci-theme-argon luci-app-argon-config luci-app-ttyd luci-app-upnp \
+                  nlbwmon luci-app-nlbwmon vnstat2 luci-app-vnstat2 netdata \
+                  mtr-nojson speedtest-netperf ddns-go luci-app-ddns-go \
+                  bash iftop conntrack lsof tcpdump iperf3 ethtool htop tmux socat drill \
+                  qrencode smartmontools lscpu ip-full curl wget-ssl; do
           if grep -qx "CONFIG_PACKAGE_${pk}=y" .config; then
             echo "  OK    ${pk}"
           else

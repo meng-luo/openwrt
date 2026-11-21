@@ -202,7 +202,10 @@ jobs:
 
     - name: Organize files
       id: organize
-      if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
+      # 关键：必须编译成功才往下走。
+      # 原模板只判 !cancelled()，导致编译失败也会建 release，
+      # 于是仓库里堆了 5 个 0 资产的空 release，其中一个还被标成 Latest。
+      if: env.UPLOAD_FIRMWARE == 'true' && steps.compile.outputs.status == 'success' && !cancelled()
       run: |
         cd openwrt/bin/targets/*/*
         rm -rf packages
@@ -218,11 +221,12 @@ jobs:
 
     - name: Generate release tag
       id: tag
-      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
+      if: env.UPLOAD_RELEASE == 'true' && steps.compile.outputs.status == 'success' && !cancelled()
       run: |
         echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
         touch release.txt
-        [ ${UPLOAD_GOFILE} = true && ${{ steps.gofile.outputs.url }} ] && echo "🔗 [GoFile](${{ steps.gofile.outputs.url }})" >> release.txt
+        # GoFile 未启用（UPLOAD_GOFILE 未定义），该行已注释，避免无意义的分支
+        # [ ${UPLOAD_GOFILE} = true && ${{ steps.gofile.outputs.url }} ] && echo "GoFile: ${{ steps.gofile.outputs.url }}" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload firmware to release

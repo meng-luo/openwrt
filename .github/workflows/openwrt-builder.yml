@@ -83,6 +83,29 @@ jobs:
       run: |
         cd openwrt
         make defconfig
+
+        # ---- defconfig 之后校验关键包没被静默丢弃 ----
+        echo "=== 关键包在 defconfig 后的状态 ==="
+        MISS=0
+        for pk in kmod-sched-core kmod-sched-cake kmod-ifb tc-full sqm-scripts luci-app-sqm \
+                  kmod-wireguard wireguard-tools luci-proto-wireguard \
+                  kmod-tcp-bbr kmod-nft-offload kmod-nft-fullcone \
+                  luci-app-passwall adguardhome luci-app-adguardhome dnsmasq-full \
+                  miniupnpd-nftables luci-app-package-manager; do
+          if grep -qx "CONFIG_PACKAGE_${pk}=y" .config; then
+            echo "  OK    ${pk}"
+          else
+            echo "  MISS  ${pk}"; MISS=1
+          fi
+        done
+        echo "=== 目标与架构 ==="
+        grep -E '^CONFIG_TARGET_(x86|BOARD|SUBTARGET|PROFILE|ARCH_PACKAGES|OPTIMIZATION)' .config || true
+        grep -E '^CONFIG_LINUX_' .config || true
+        if [ "$MISS" = "1" ]; then
+          echo "FATAL: defconfig 后有关键包被丢弃，中止下载以节省时间"
+          exit 1
+        fi
+
         make download -j8
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;

@@ -113,12 +113,18 @@ else
 fi
 
 # ---------------------------------------------------------------
-# 5) 断言：关键包确实被 feeds install 进了源码树
-#    （免得两小时后才发现某个包没装上）
+# ---------------------------------------------------------------
+# 5) 断言：关键包确实进了源码树
+#
+# 注意：包可能来自两处
+#   a) feeds：     package/feeds/<feed>/<pkg>     例 luci-app-sqm、sqm-scripts
+#   b) 主源码树：   package/network/utils/<pkg>    例 wireguard-tools、iproute2
+# 所以不能只看 package/feeds/ —— 上一版就漏了 wireguard-tools 导致构建中断。
 # ---------------------------------------------------------------
 echo "----------------------------------------------------------"
-for p in luci-app-passwall luci-app-sqm sqm-scripts adguardhome luci-app-adguardhome wireguard-tools; do
-    hit=$(ls -d package/feeds/*/"$p" 2>/dev/null | head -1)
+MISSING=0
+for p in luci-app-passwall luci-app-sqm sqm-scripts adguardhome luci-app-adguardhome wireguard-tools kmod-wireguard; do
+    hit=$(find package -maxdepth 4 -type d -name "$p" 2>/dev/null | head -1)
     if [ -n "$hit" ]; then
         printf "  %-26s -> %s\n" "$p" "$hit"
     else
@@ -126,14 +132,13 @@ for p in luci-app-passwall luci-app-sqm sqm-scripts adguardhome luci-app-adguard
         MISSING=1
     fi
 done
-if [ "${MISSING:-0}" = "1" ]; then
-    echo "FATAL: 有包没进树，检查 feeds。"
-    echo "提示：luci-app-adguardhome 来自 kenzo 源，若 kenzo 不可达则只缺这一个。"
+if [ "$MISSING" = "1" ]; then
+    echo "FATAL: 有包没进树。"
+    echo "  排查：./scripts/feeds list -i | grep <pkg> ；或在主树里 find package -type d -name <pkg>"
     exit 1
 fi
 echo "[5] 关键包校验 OK"
 
-# ---------------------------------------------------------------
 # 6) files/ 覆盖层
 # ---------------------------------------------------------------
 if [ -d files ]; then

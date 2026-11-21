@@ -93,7 +93,7 @@ jobs:
                   luci-app-passwall adguardhome luci-app-adguardhome dnsmasq-full \
                   miniupnpd-nftables luci-app-package-manager \
                   xray-core sing-box chinadns-ng geoview v2ray-plugin v2ray-geoip v2ray-geosite \
-                  luci-theme-argon luci-app-argon-config luci-app-ttyd luci-app-upnp \
+                  luci-theme-argon luci-app-ttyd luci-app-upnp \
                   nlbwmon luci-app-nlbwmon vnstat2 luci-app-vnstat2 netdata \
                   mtr-nojson speedtest-netperf ddns-go luci-app-ddns-go \
                   bash iftop conntrack lsof tcpdump iperf3 ethtool htop tmux socat drill \
@@ -105,8 +105,43 @@ jobs:
           fi
         done
         echo "=== 目标与架构 ==="
-        grep -E '^CONFIG_TARGET_(x86|BOARD|SUBTARGET|PROFILE|ARCH_PACKAGES|OPTIMIZATION)' .config || true
+        grep -E '^CONFIG_TARGET_(x86|BOARD|SUBTARGET|PROFILE|ARCH_PACKAGES)' .config || true
         grep -E '^CONFIG_LINUX_' .config || true
+
+        # ---- 引导 / 镜像 / 编译优化：这些被静默重置会导致刷错镜像或优化失效 ----
+        echo "=== 引导与镜像 ==="
+        BMISS=0
+        must() {
+          if grep -qx "$1" .config; then echo "  OK    $1";
+          else echo "  MISS  $1"; BMISS=1; fi
+        }
+        must 'CONFIG_GRUB_EFI_IMAGES=y'
+        must 'CONFIG_TARGET_ROOTFS_EXT4FS=y'
+        must 'CONFIG_TARGET_IMAGES_GZIP=y'
+        must 'CONFIG_TARGET_KERNEL_PARTSIZE=128'
+        must 'CONFIG_TARGET_ROOTFS_PARTSIZE=448'
+        must 'CONFIG_GRUB_TIMEOUT="5"'
+        must 'CONFIG_DEVEL=y'
+        must 'CONFIG_TARGET_OPTIONS=y'
+        if grep -qx 'CONFIG_GRUB_IMAGES=y' .config; then
+          echo "  WARN  同时选了 legacy GRUB_IMAGES（非致命，确认要 BIOS 镜像的话可留）"
+        else
+          echo "  OK    未选 GRUB_IMAGES（只出 EFI 镜像，符合 UEFI 机器）"
+        fi
+
+        echo "=== 编译优化（必须含 silvermont，否则说明 DEVEL/TARGET_OPTIONS 没生效）==="
+        grep -E '^CONFIG_TARGET_OPTIMIZATION=' .config || echo "  (未设置)"
+        if ! grep -qE '^CONFIG_TARGET_OPTIMIZATION=".*silvermont' .config; then
+          echo "  MISS  编译优化被 kconfig 重置了"; BMISS=1
+        else
+          echo "  OK    silvermont 优化已生效"
+        fi
+
+        if [ "$BMISS" = "1" ]; then
+          echo "FATAL: 引导/镜像/优化符号不符合预期，中止"
+          exit 1
+        fi
+
         if [ "$MISS" = "1" ]; then
           echo "FATAL: defconfig 后有关键包被丢弃，中止下载以节省时间"
           exit 1

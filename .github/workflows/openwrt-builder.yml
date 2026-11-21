@@ -147,13 +147,13 @@ jobs:
           fi
         done
 
-        # ---- 总量守卫：防止 CONFIG_ALL 之类把全部包打开 ----
-        echo "=== 包总量守卫 ==="
+        # ---- 总量记录（仅参考，不做致命判据）----
+        # 教训：凭直觉定阈值会造成误报。本配置实测 466 个
+        # CONFIG_PACKAGE_*=y 属于正常（含大量 kmod-* 独立符号）。
+        # 判断 ALL 是否被打开，用下面确定性的符号检查，不用计数。
+        echo "=== 包总量（参考值，基准 466）==="
         PKGN=$(grep -c '^CONFIG_PACKAGE_[^=]*=y$' .config)
         echo "  CONFIG_PACKAGE_*=y 共 ${PKGN} 个"
-        if [ "$PKGN" -gt 400 ]; then
-          echo "  BAD   数量异常偏多，怀疑 CONFIG_ALL=y"; BMISS=1
-        fi
         if grep -qE '^CONFIG_(ALL|ALL_KMODS|ALL_NONSHARED|BUILD_ALL_HOST_TOOLS)=y$' .config; then
           echo "  BAD   有 ALL 类开关被打开："
           grep -E '^CONFIG_(ALL|ALL_KMODS|ALL_NONSHARED|BUILD_ALL_HOST_TOOLS)=y$' .config

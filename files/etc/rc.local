@@ -1,0 +1,27 @@
+# Put your custom commands here that should be executed once
+# the system init finished. By default this file does nothing.
+
+# ---- meng-luo: 每次启动留一份运行时快照，方便刷完远程核对 ----
+{
+	echo "=== boot $(date) ==="
+	uname -r
+	grep -E "DISTRIB_(DESCRIPTION|REVISION)" /etc/openwrt_release 2>/dev/null
+	echo "--- qdisc ---"
+	tc -s qdisc show 2>/dev/null | head -40
+	echo "--- cake/wireguard/bbr ---"
+	lsmod 2>/dev/null | grep -E "sch_cake|wireguard|tcp_bbr"
+	echo "--- nft flowtable ---"
+	nft list ruleset 2>/dev/null | grep -c flowtable
+	echo "--- fullcone ---"
+	nft list ruleset 2>/dev/null | grep -c fullcone
+	echo "--- conntrack ---"
+	cat /proc/sys/net/netfilter/nf_conntrack_count 2>/dev/null
+	cat /proc/sys/net/netfilter/nf_conntrack_max 2>/dev/null
+	cat /proc/sys/net/netfilter/nf_conntrack_buckets 2>/dev/null
+	echo "--- sqm ---"
+	uci show sqm 2>/dev/null
+	echo "--- 网卡 ---"
+	ip -br a 2>/dev/null
+} > /etc/bootnote.log 2>&1
+
+exit 0

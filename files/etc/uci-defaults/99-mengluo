@@ -1,0 +1,18 @@
+#!/bin/sh
+# meng-luo 首次启动默认值
+[ -f /etc/config/firewall ] || exit 0
+
+# FullCone NAT：BT / P2P 打洞必需，等价于原来 lede 的 xt_FULLCONENAT
+uci -q set firewall.@defaults[0].fullcone='1'
+uci -q set firewall.@defaults[0].fullcone6='0'
+# 保持 flow offloading 开启（吞吐优先）；要跑 SQM 时再手动关
+uci -q set firewall.@defaults[0].flow_offloading='1'
+uci -q set firewall.@defaults[0].flow_offloading_hw='0'
+uci -q commit firewall
+
+# 时区
+uci -q set system.@system[0].timezone='CST-8'
+uci -q set system.@system[0].zonename='Asia/Shanghai'
+uci -q commit system
+
+exit 0

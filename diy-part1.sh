@@ -1,28 +1,24 @@
 #!/bin/bash
 #
 # diy-part1.sh — feeds update 之前执行
-# 目标上游：immortalwrt/immortalwrt @ openwrt-24.10
+# 目标上游：immortalwrt/immortalwrt @ openwrt-25.12（内核 6.12 LTS）
 #
 # 说明：
-#  * 不再 sed KERNEL_PATCHVER —— openwrt-24.10 原生就是 6.6。
+#  * 不再 sed KERNEL_PATCHVER —— openwrt-25.12 原生就是 6.12。
 #  * passwall / xray-core / sing-box / chinadns-ng / geoview / v2ray-plugin
 #    / shadowsocks-rust / haproxy 全部由 ImmortalWrt 官方 feeds 提供，
 #    不需要外挂 passwall 源。
-#  * adguardhome 本体也在 ImmortalWrt 官方 packages 源里（0.107.57-r1）。
-#  * 只有 AdGuardHome 的 LuCI 界面 luci-app-adguardhome 需要 kenzo 源。
+#  * adguardhome 本体 + LuCI 界面（luci-app-adguardhome）在 25.12 里
+#    全部由 ImmortalWrt 官方源提供 —— **不再需要任何外挂源**。
 #
 set -e
 
 echo "== 当前 feeds.conf.default =="
 cat feeds.conf.default
 
-# ---- kenzo 源：只为了 luci-app-adguardhome ----
-if ! grep -q 'kenzok8/openwrt-packages' feeds.conf.default; then
-    echo 'src-git kenzo https://github.com/kenzok8/openwrt-packages' >> feeds.conf.default
-fi
-if ! grep -q 'kenzok8/small' feeds.conf.default; then
-    echo 'src-git small https://github.com/kenzok8/small' >> feeds.conf.default
-fi
-
 echo "== 追加后 =="
 cat feeds.conf.default
+
+# 说明：openwrt-25.12 的官方 feeds 已经覆盖全部所需包（87/87 已核对），
+# 因此不再追加 kenzo / small 等外部源。
+# 少一个外部源 = 少一个构建失败面。

@@ -1,9 +1,9 @@
 #!/bin/bash
 #
 # diy-part2.sh — feeds install 之后、make defconfig 之前执行
-# 目标上游：immortalwrt/immortalwrt @ openwrt-24.10
+# 目标上游：immortalwrt/immortalwrt @ openwrt-25.12（内核 6.12 LTS）
 #
-# 本脚本里每一条 sed 的匹配串都在 immortalwrt 24.10 源码里核实过：
+# 本脚本里每一条 sed 的匹配串都在 immortalwrt 25.12 源码里核实过：
 #   package/base-files/files/bin/config_generate:165  lan) ipad=${ipaddr:-"192.168.1.1"} ;;
 #   package/base-files/files/bin/config_generate:314  set system.@system[-1].hostname='ImmortalWrt'
 #   feeds/luci/collections/luci-light/Makefile        +luci-theme-bootstrap

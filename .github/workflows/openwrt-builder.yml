@@ -137,8 +137,33 @@ jobs:
           echo "  OK    silvermont 优化已生效"
         fi
 
+        # ---- 必须「没有被选中」的包：上游某些 INCLUDE 默认值是 y ----
+        echo "=== 必须关闭的包（防上游默认值坑）==="
+        for neg in shadowsocks-rust-sslocal shadowsocks-rust-ssserver simple-obfs-client smartdns rust; do
+          if grep -qx "CONFIG_PACKAGE_${neg}=y" .config; then
+            echo "  BAD   仍被选中 ${neg}"; BMISS=1
+          else
+            echo "  OK    未选中 ${neg}"
+          fi
+        done
+
+        # ---- 总量守卫：防止 CONFIG_ALL 之类把全部包打开 ----
+        echo "=== 包总量守卫 ==="
+        PKGN=$(grep -c '^CONFIG_PACKAGE_[^=]*=y$' .config)
+        echo "  CONFIG_PACKAGE_*=y 共 ${PKGN} 个"
+        if [ "$PKGN" -gt 400 ]; then
+          echo "  BAD   数量异常偏多，怀疑 CONFIG_ALL=y"; BMISS=1
+        fi
+        if grep -qE '^CONFIG_(ALL|ALL_KMODS|ALL_NONSHARED|BUILD_ALL_HOST_TOOLS)=y$' .config; then
+          echo "  BAD   有 ALL 类开关被打开："
+          grep -E '^CONFIG_(ALL|ALL_KMODS|ALL_NONSHARED|BUILD_ALL_HOST_TOOLS)=y$' .config
+          BMISS=1
+        else
+          echo "  OK    ALL / ALL_KMODS / ALL_NONSHARED / BUILD_ALL_HOST_TOOLS 均未开启"
+        fi
+
         if [ "$BMISS" = "1" ]; then
-          echo "FATAL: 引导/镜像/优化符号不符合预期，中止"
+          echo "FATAL: 引导/镜像/优化/包选择不符合预期，中止"
           exit 1
         fi
 

@@ -97,7 +97,7 @@ jobs:
                   nlbwmon luci-app-nlbwmon vnstat2 luci-app-vnstat2 netdata \
                   mtr-nojson speedtest-netperf ddns-go luci-app-ddns-go \
                   bash iftop conntrack lsof tcpdump iperf3 ethtool htop tmux socat drill \
-                  qrencode smartmontools lscpu ip-full curl wget-ssl; do
+                  qrencode smartmontools lscpu qemu-ga ip-full curl wget-ssl; do
           if grep -qx "CONFIG_PACKAGE_${pk}=y" .config; then
             echo "  OK    ${pk}"
           else
@@ -119,7 +119,7 @@ jobs:
         must 'CONFIG_TARGET_ROOTFS_EXT4FS=y'
         must 'CONFIG_TARGET_IMAGES_GZIP=y'
         must 'CONFIG_TARGET_KERNEL_PARTSIZE=128'
-        must 'CONFIG_TARGET_ROOTFS_PARTSIZE=448'
+        must 'CONFIG_TARGET_ROOTFS_PARTSIZE=2048'
         must 'CONFIG_GRUB_TIMEOUT="5"'
         must 'CONFIG_DEVEL=y'
         must 'CONFIG_TARGET_OPTIONS=y'
@@ -129,12 +129,12 @@ jobs:
           echo "  OK    未选 GRUB_IMAGES（只出 EFI 镜像，符合 UEFI 机器）"
         fi
 
-        echo "=== 编译优化（必须含 silvermont，否则说明 DEVEL/TARGET_OPTIONS 没生效）==="
+        echo "=== 编译优化（必须含 goldmont-plus，否则说明 DEVEL/TARGET_OPTIONS 没生效）==="
         grep -E '^CONFIG_TARGET_OPTIMIZATION=' .config || echo "  (未设置)"
-        if ! grep -qE '^CONFIG_TARGET_OPTIMIZATION=".*silvermont' .config; then
-          echo "  MISS  编译优化被 kconfig 重置了"; BMISS=1
+        if ! grep -qE '^CONFIG_TARGET_OPTIMIZATION=".*goldmont-plus' .config; then
+          echo "  MISS  编译优化被 kconfig 重置了（期望 goldmont-plus）"; BMISS=1
         else
-          echo "  OK    silvermont 优化已生效"
+          echo "  OK    goldmont-plus 优化已生效（J4125）"
         fi
 
         # ---- 必须「没有被选中」的包：上游某些 INCLUDE 默认值是 y ----

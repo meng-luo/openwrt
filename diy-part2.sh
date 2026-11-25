@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 # diy-part2.sh — feeds install 之后、make defconfig 之前执行
-# 目标上游：immortalwrt/immortalwrt @ openwrt-25.12（内核 6.12 LTS）
+# 目标上游：immortalwrt/immortalwrt @ tag v25.12.2（内核 6.12 LTS）
+# 注意：从 release tag 构建，不是 openwrt-25.12 分支。
+# 分支的 version.mk 默认值是 25.12-SNAPSHOT，且 apk 源会指向滚动目录。
 #
 # 本脚本里每一条 sed 的匹配串都在 immortalwrt 25.12 源码里核实过：
 #   package/base-files/files/bin/config_generate:165  lan) ipad=${ipaddr:-"192.168.1.1"} ;;

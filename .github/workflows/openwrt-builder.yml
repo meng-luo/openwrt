@@ -18,7 +18,11 @@ on:
 
 env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
-  REPO_BRANCH: openwrt-25.12
+  # 从 release tag 构建，不是从滚动分支。
+  # 分支 openwrt-25.12 的 include/version.mk 默认值是 25.12-SNAPSHOT，
+  # 且 VERSION_REPO 会指向 releases/25.12-SNAPSHOT（滚动目录，apk 源会漂）。
+  # tag 的 feeds.conf.default 还把 5 个 feed 钉死在具体 commit，可复现。
+  REPO_BRANCH: v25.12.2
   FEEDS_CONF: feeds.conf.default
   CONFIG_FILE: .config
   DIY_P1_SH: diy-part1.sh
@@ -108,9 +112,55 @@ jobs:
         grep -E '^CONFIG_TARGET_(x86|BOARD|SUBTARGET|PROFILE|ARCH_PACKAGES)' .config || true
         grep -E '^CONFIG_LINUX_' .config || true
 
+        # ---- 构建基线：必须是从 release tag 构建，不能是滚动分支 ----
+        # 这是本项目最容易悄悄跑偏的地方，判据必须确定性：
+        #   分支的 version.mk 默认值是 "25.12-SNAPSHOT"
+        #   分支的 feeds.conf.default 是 "git;openwrt-25.12"（滚动）
+        #   tag  的 version.mk 默认值是 "25.12.2"
+        #   tag  的 feeds.conf.default 是 "git^<40位commit>"（钉死）
+        BMISS=0
+        echo "=== 构建基线 ==="
+        if grep -qE 'VERSION_NUMBER:=.*SNAPSHOT' openwrt/include/version.mk; then
+          echo "  MISS  version.mk 版本默认值还是 SNAPSHOT —— 不是从 release tag 构建"
+          grep -nE '^VERSION_NUMBER' openwrt/include/version.mk | sed 's/^/    /'
+          BMISS=1
+        else
+          echo "  OK    version.mk 版本默认值不是 SNAPSHOT"
+        fi
+        grep -E '^VERSION_NUMBER:=.*[0-9]' openwrt/include/version.mk | sed 's/^/    /' | tail -2
+
+        if grep -qE '^src-git [a-z]+ .*git;' openwrt/feeds.conf.default; then
+          echo "  MISS  feeds.conf.default 指向滚动分支，应钉死 commit"
+          sed 's/^/    /' openwrt/feeds.conf.default
+          BMISS=1
+        else
+          echo "  OK    feeds 已钉死到具体 commit"
+        fi
+        if grep -qE '^src-git [a-z]+ .*git\^' openwrt/feeds.conf.default; then
+          echo "  OK    5 个 feed 均为 ^commit 形式"
+        else
+          echo "  WARN  feeds 不是 ^commit 形式，确认一下"
+        fi
+
+        if grep -E '^CONFIG_VERSION_(NUMBER|REPO)=' .config | grep -q SNAPSHOT; then
+          echo "  MISS  .config 里还残留 SNAPSHOT（会把 apk 源指向滚动目录）"
+          grep -E '^CONFIG_VERSION_(NUMBER|REPO)=' .config | sed 's/^/    /'
+          BMISS=1
+        else
+          echo "  OK    .config 里无 SNAPSHOT 残留"
+        fi
+
+        # 自编后缀：IMAGEOPT/VERSIONOPT 若被 kconfig 丢弃只 WARN —— 
+        # tag 的 version.mk 默认值已是 25.12.2，正确性不依赖这几项。
+        if grep -qE '^CONFIG_VERSION_NUMBER=' .config; then
+          echo "  INFO  VERSION_NUMBER = $(grep '^CONFIG_VERSION_NUMBER=' .config | cut -d'"' -f2)"
+          grep -E '^CONFIG_VERSION_REPO=' .config | sed 's/^/    /'
+        else
+          echo "  WARN  VERSIONOPT 未生效（非致命：tag 默认值已是 25.12.2）"
+        fi
+
         # ---- 引导 / 镜像 / 编译优化：这些被静默重置会导致刷错镜像或优化失效 ----
         echo "=== 引导与镜像 ==="
-        BMISS=0
         must() {
           if grep -qx "$1" .config; then echo "  OK    $1";
           else echo "  MISS  $1"; BMISS=1; fi
